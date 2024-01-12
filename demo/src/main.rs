@@ -1,9 +1,10 @@
 use raylib::prelude::*;
 
+#[derive(Copy, Clone)]
 struct Vec3D {
-    x: f64,
-    y: f64,
-    z: f64
+    x: f32,
+    y: f32,
+    z: f32
 }
 
 struct Triangle {
@@ -14,8 +15,12 @@ struct Mesh {
     tris: Vec<Triangle>
 }
 
+struct MatProj {
+    m: [[f32; 4]; 4]
+}
+
 impl Vec3D {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
 }
@@ -29,6 +34,30 @@ impl Triangle {
 impl Mesh {
     fn new(tris: Vec<Triangle>) -> Self {
         Self { tris }
+    }
+}
+
+impl Default for MatProj {
+    fn default() -> Self {
+        Self {
+            m: [[0.0; 4]; 4]
+        }
+    }
+}
+
+impl Default for Vec3D {
+    fn default() -> Self {
+        Self { x: 0.0, y: 0.0, z: 0.0 }
+    }
+}
+
+impl Default for Triangle {
+    fn default() -> Self {
+        let p0 = Vec3D::default();
+        let p1 = Vec3D::default();
+        let p2 = Vec3D::default();
+
+        Self { p: [p0, p1, p2] }
     }
 }
 
@@ -115,4 +144,129 @@ fn main() {
     ];
 
     let mesh = Mesh::new(triangle_vec);
+    let mut mat_proj: MatProj = Default::default();
+
+    let f_near: f32 = 0.1;
+    let f_far: f32 = 1000.0;
+    let f_fov: f32 = 90.0;
+    let f_aspect_ratio: f32 = 640.0 / 480.0;
+    let f_fov_rad: f32 = 1.0 / (f_fov * 0.5 / 180.0 * 3.14159).tan();
+    let mut f_theta: f64 = 0.0;
+
+    mat_proj.m[0][0] = f_aspect_ratio * f_fov_rad;
+    mat_proj.m[1][1] = f_fov_rad;
+    mat_proj.m[2][2] = f_far / (f_far - f_near);
+    mat_proj.m[3][2] = (-f_far * f_near) / (f_far - f_near);
+    mat_proj.m[2][3] = 1.0;
+    mat_proj.m[3][3] = 0.0;
+
+    let mut mat_rot_z: MatProj = Default::default();
+    let mut mat_rot_x: MatProj = Default::default();
+
+    let (mut rl, thread) = raylib::init()
+        .size(800, 800)
+        .title("3D demo")
+        .build();
+
+    while !rl.window_should_close() {
+        let mut d = rl.begin_drawing(&thread);
+        d.clear_background(Color::BLACK);
+
+        f_theta = d.get_time() + 100.0;
+
+        // Rotation Z
+        mat_rot_z.m[0][0] = f_theta.cos() as f32;
+        mat_rot_z.m[0][1] = f_theta.sin() as f32;
+        mat_rot_z.m[1][0] = -f_theta.sin() as f32;
+        mat_rot_z.m[1][1] = f_theta.cos() as f32;
+        mat_rot_z.m[2][2] = 1.0;
+        mat_rot_z.m[3][3] = 1.0;
+
+        // Rotation X
+        mat_rot_x.m[0][0] = 1.0;
+        mat_rot_x.m[1][1] = (f_theta * 0.5).cos() as f32;
+        mat_rot_x.m[1][2] = (f_theta * 0.5).sin() as f32;
+        mat_rot_x.m[2][1] = -(f_theta * 0.5).sin() as f32;
+        mat_rot_x.m[2][2] = (f_theta * 0.5).cos() as f32;
+        mat_rot_x.m[3][3] = 1.0;
+
+        for tri in &mesh.tris {
+            // Draw triangles
+            // let mut tri_projected = Triangle::default();
+            // let mut tri_translated = Triangle::new([
+            //     tri.p[0],
+            //     tri.p[1],
+            //     tri.p[2]
+            // ]);
+            let mut tri_projected = Triangle::default();
+            let mut tri_rotated_z = Triangle::default();
+            let mut tri_rotated_zx = Triangle::default();
+
+            multiply_matrix_vector(&tri.p[0], &mut tri_rotated_z.p[0], &mat_rot_z);
+            multiply_matrix_vector(&tri.p[1], &mut tri_rotated_z.p[1], &mat_rot_z);
+            multiply_matrix_vector(&tri.p[2], &mut tri_rotated_z.p[2], &mat_rot_z);
+
+            multiply_matrix_vector(&tri_rotated_z.p[0], &mut tri_rotated_zx.p[0], &mat_rot_x);
+            multiply_matrix_vector(&tri_rotated_z.p[1], &mut tri_rotated_zx.p[1], &mat_rot_x);
+            multiply_matrix_vector(&tri_rotated_z.p[2], &mut tri_rotated_zx.p[2], &mat_rot_x);
+
+            let mut tri_translated = Triangle::new([
+                tri_rotated_zx.p[0],
+                tri_rotated_zx.p[1],
+                tri_rotated_zx.p[2]
+            ]);
+
+            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 3.0;
+            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 3.0;
+            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 3.0;
+
+            multiply_matrix_vector(&tri_translated.p[0], &mut tri_projected.p[0], &mat_proj);
+            multiply_matrix_vector(&tri_translated.p[1], &mut tri_projected.p[1], &mat_proj);
+            multiply_matrix_vector(&tri_translated.p[2], &mut tri_projected.p[2], &mat_proj);
+
+            // Scale into view (?)
+            tri_projected.p[0].x += 1.0; tri_projected.p[0].y += 1.0;
+            tri_projected.p[1].x += 1.0; tri_projected.p[1].y += 1.0;
+            tri_projected.p[2].x += 1.0; tri_projected.p[2].y += 1.0;
+
+            tri_projected.p[0].x *= 0.5 * 800.0;
+            tri_projected.p[0].y *= 0.5 * 800.0;
+
+            tri_projected.p[1].x *= 0.5 * 800.0;
+            tri_projected.p[1].y *= 0.5 * 800.0;
+
+            tri_projected.p[2].x *= 0.5 * 800.0;
+            tri_projected.p[2].y *= 0.5 * 800.0;
+
+            draw_triangle(
+                &mut d,
+                tri_projected.p[0].x,
+                tri_projected.p[0].y,
+                tri_projected.p[1].x,
+                tri_projected.p[1].y,
+                tri_projected.p[2].x,
+                tri_projected.p[2].y,
+                Color::RED
+            );
+        }
+    }
+}
+
+fn multiply_matrix_vector(input: &Vec3D, output: &mut Vec3D, mat_proj: &MatProj) {
+    output.x = input.x * mat_proj.m[0][0] + input.y * mat_proj.m[1][0] + input.z * mat_proj.m[2][0] + mat_proj.m[3][0];
+    output.y = input.x * mat_proj.m[0][1] + input.y * mat_proj.m[1][1] + input.z * mat_proj.m[2][1] + mat_proj.m[3][1];
+    output.z = input.x * mat_proj.m[0][2] + input.y * mat_proj.m[1][2] + input.z * mat_proj.m[2][2] + mat_proj.m[3][2];
+    let w: f32 = input.x * mat_proj.m[0][3] + input.y * mat_proj.m[1][3] + input.z * mat_proj.m[2][3] + mat_proj.m[3][3];
+
+    if w != 0.0 {
+        output.x /= w;
+        output.y /= w;
+        output.z /= w;
+    }
+}
+
+fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, color: Color) {
+    d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, color);
+    d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, color);
+    d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, color);
 }
