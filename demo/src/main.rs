@@ -8,7 +8,8 @@ struct Vec3D {
 }
 
 struct Triangle {
-    p: [Vec3D; 3]
+    p: [Vec3D; 3],
+    color: Option<Color>
 }
 
 struct Mesh {
@@ -27,7 +28,7 @@ impl Vec3D {
 
 impl Triangle {
     fn new(p: [Vec3D; 3]) -> Self {
-        Self { p }
+        Self { p, color: None }
     }
 }
 
@@ -57,7 +58,7 @@ impl Default for Triangle {
         let p1 = Vec3D::default();
         let p2 = Vec3D::default();
 
-        Self { p: [p0, p1, p2] }
+        Self { p: [p0, p1, p2], color: None }
     }
 }
 
@@ -236,12 +237,20 @@ fn main() {
             let l = (normal.x*normal.x + normal.y*normal.y + normal.z*normal.z).sqrt();
             normal.x /= l; normal.y /= l; normal.z /= l;
 
-            // if normal.z < 0.0 {
             if (
                 normal.x * (tri_translated.p[0].x - v_camera.x) +
                 normal.y * (tri_translated.p[0].y - v_camera.y) +
                 normal.z * (tri_translated.p[0].z - v_camera.z)
             ) < 0.0 {
+                // Illumination
+                let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0 };
+                let l = (light_direction.x*light_direction.x + light_direction.y*light_direction.y + light_direction.z*light_direction.z).sqrt();
+                light_direction.x /= l; light_direction.y /= l; light_direction.z /= l;
+
+                let dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
+                let c = get_color(dp);
+                tri_projected.color = Some(c);
+
                 // Project triangles from 3D --> 2D
                 multiply_matrix_vector(&tri_translated.p[0], &mut tri_projected.p[0], &mat_proj);
                 multiply_matrix_vector(&tri_translated.p[1], &mut tri_projected.p[1], &mat_proj);
@@ -269,7 +278,7 @@ fn main() {
                     tri_projected.p[1].y,
                     tri_projected.p[2].x,
                     tri_projected.p[2].y,
-                    Color::RED
+                    tri_projected.color
                 );
             }
         }
@@ -289,8 +298,42 @@ fn multiply_matrix_vector(input: &Vec3D, output: &mut Vec3D, mat_proj: &MatProj)
     }
 }
 
-fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, color: Color) {
-    d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, color);
-    d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, color);
-    d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, color);
+fn get_color(lum: f32) -> Color {
+    let pixel_bw = (13.0*lum) as i32;
+    match pixel_bw {
+        0 => Color::BLACK,
+        1 => Color::BLACK,
+        2 => Color::BLACK,
+        3 => Color::BLACK,
+        4 => Color::DARKGRAY,
+        5 => Color::DARKGRAY,
+        6 => Color::DARKGRAY,
+        7 => Color::DARKGRAY,
+        8 => Color::GRAY,
+        9 => Color::GRAY,
+        10 => Color::WHITE,
+        11 => Color::WHITE,
+        12 => Color::WHITE,
+        _ => Color::BLACK
+    }
+}
+
+fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, color: Option<Color>) {
+    match color {
+        Some(c) => {
+            let t1 = Vector2::new(x1, y1);
+            let t2 = Vector2::new(x2, y2);
+            let t3 = Vector2::new(x3, y3);
+
+            d.draw_triangle(t1, t2, t3, c);
+
+            d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
+            d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
+            d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
+        },
+        None => {
+            eprintln!("Triangle doesn't have a color value.");
+            std::process::exit(1);
+        }
+    }
 }
