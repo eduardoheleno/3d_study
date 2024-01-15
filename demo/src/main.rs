@@ -146,6 +146,7 @@ fn main() {
     let mesh = Mesh::new(triangle_vec);
     let mut mat_proj: MatProj = Default::default();
 
+    let v_camera = Vec3D::default();
     let f_near: f32 = 0.1;
     let f_far: f32 = 1000.0;
     let f_fov: f32 = 90.0;
@@ -192,12 +193,6 @@ fn main() {
 
         for tri in &mesh.tris {
             // Draw triangles
-            // let mut tri_projected = Triangle::default();
-            // let mut tri_translated = Triangle::new([
-            //     tri.p[0],
-            //     tri.p[1],
-            //     tri.p[2]
-            // ]);
             let mut tri_projected = Triangle::default();
             let mut tri_rotated_z = Triangle::default();
             let mut tri_rotated_zx = Triangle::default();
@@ -206,6 +201,7 @@ fn main() {
             multiply_matrix_vector(&tri.p[1], &mut tri_rotated_z.p[1], &mat_rot_z);
             multiply_matrix_vector(&tri.p[2], &mut tri_rotated_z.p[2], &mat_rot_z);
 
+            // Rotate in X-Axis
             multiply_matrix_vector(&tri_rotated_z.p[0], &mut tri_rotated_zx.p[0], &mat_rot_x);
             multiply_matrix_vector(&tri_rotated_z.p[1], &mut tri_rotated_zx.p[1], &mat_rot_x);
             multiply_matrix_vector(&tri_rotated_z.p[2], &mut tri_rotated_zx.p[2], &mat_rot_x);
@@ -216,38 +212,66 @@ fn main() {
                 tri_rotated_zx.p[2]
             ]);
 
+            // Offset into the screen
             tri_translated.p[0].z = tri_rotated_zx.p[0].z + 3.0;
             tri_translated.p[1].z = tri_rotated_zx.p[1].z + 3.0;
             tri_translated.p[2].z = tri_rotated_zx.p[2].z + 3.0;
 
-            multiply_matrix_vector(&tri_translated.p[0], &mut tri_projected.p[0], &mat_proj);
-            multiply_matrix_vector(&tri_translated.p[1], &mut tri_projected.p[1], &mat_proj);
-            multiply_matrix_vector(&tri_translated.p[2], &mut tri_projected.p[2], &mat_proj);
+            let mut normal = Vec3D::default();
+            let mut line1 = Vec3D::default();
+            let mut line2 = Vec3D::default();
 
-            // Scale into view (?)
-            tri_projected.p[0].x += 1.0; tri_projected.p[0].y += 1.0;
-            tri_projected.p[1].x += 1.0; tri_projected.p[1].y += 1.0;
-            tri_projected.p[2].x += 1.0; tri_projected.p[2].y += 1.0;
+            line1.x = tri_translated.p[1].x - tri_translated.p[0].x;
+            line1.y = tri_translated.p[1].y - tri_translated.p[0].y;
+            line1.z = tri_translated.p[1].z - tri_translated.p[0].z;
 
-            tri_projected.p[0].x *= 0.5 * 800.0;
-            tri_projected.p[0].y *= 0.5 * 800.0;
+            line2.x = tri_translated.p[2].x - tri_translated.p[0].x;
+            line2.y = tri_translated.p[2].y - tri_translated.p[0].y;
+            line2.z = tri_translated.p[2].z - tri_translated.p[0].z;
 
-            tri_projected.p[1].x *= 0.5 * 800.0;
-            tri_projected.p[1].y *= 0.5 * 800.0;
+            normal.x = line1.y * line2.z - line1.z * line2.y;
+            normal.y = line1.z * line2.x - line1.x * line2.z;
+            normal.z = line1.x * line2.y - line1.y * line2.x;
 
-            tri_projected.p[2].x *= 0.5 * 800.0;
-            tri_projected.p[2].y *= 0.5 * 800.0;
+            let l = (normal.x*normal.x + normal.y*normal.y + normal.z*normal.z).sqrt();
+            normal.x /= l; normal.y /= l; normal.z /= l;
 
-            draw_triangle(
-                &mut d,
-                tri_projected.p[0].x,
-                tri_projected.p[0].y,
-                tri_projected.p[1].x,
-                tri_projected.p[1].y,
-                tri_projected.p[2].x,
-                tri_projected.p[2].y,
-                Color::RED
-            );
+            // if normal.z < 0.0 {
+            if (
+                normal.x * (tri_translated.p[0].x - v_camera.x) +
+                normal.y * (tri_translated.p[0].y - v_camera.y) +
+                normal.z * (tri_translated.p[0].z - v_camera.z)
+            ) < 0.0 {
+                // Project triangles from 3D --> 2D
+                multiply_matrix_vector(&tri_translated.p[0], &mut tri_projected.p[0], &mat_proj);
+                multiply_matrix_vector(&tri_translated.p[1], &mut tri_projected.p[1], &mat_proj);
+                multiply_matrix_vector(&tri_translated.p[2], &mut tri_projected.p[2], &mat_proj);
+
+                // Scale into view (?)
+                tri_projected.p[0].x += 1.0; tri_projected.p[0].y += 1.0;
+                tri_projected.p[1].x += 1.0; tri_projected.p[1].y += 1.0;
+                tri_projected.p[2].x += 1.0; tri_projected.p[2].y += 1.0;
+
+                tri_projected.p[0].x *= 0.5 * 800.0;
+                tri_projected.p[0].y *= 0.5 * 800.0;
+
+                tri_projected.p[1].x *= 0.5 * 800.0;
+                tri_projected.p[1].y *= 0.5 * 800.0;
+
+                tri_projected.p[2].x *= 0.5 * 800.0;
+                tri_projected.p[2].y *= 0.5 * 800.0;
+
+                draw_triangle(
+                    &mut d,
+                    tri_projected.p[0].x,
+                    tri_projected.p[0].y,
+                    tri_projected.p[1].x,
+                    tri_projected.p[1].y,
+                    tri_projected.p[2].x,
+                    tri_projected.p[2].y,
+                    Color::RED
+                );
+            }
         }
     }
 }
