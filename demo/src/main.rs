@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::{prelude::*, BufReader};
 use raylib::prelude::*;
 
 #[derive(Copy, Clone)]
@@ -36,6 +38,51 @@ impl Mesh {
     fn new(tris: Vec<Triangle>) -> Self {
         Self { tris }
     }
+
+    fn load_from_object_file(&mut self, filename: &str) -> bool {
+        let full_filename = format!("3d_models/{}", filename);
+
+        let file = File::open(full_filename).unwrap();
+        let reader = BufReader::new(file);
+
+        let mut verts: Vec<Vec3D> = Vec::new();
+
+        for line in reader.lines() {
+            let un_line = line.unwrap();
+            let junk = un_line.chars().nth(0).unwrap();
+
+            match junk {
+                'v' => {
+                    let line_vec: Vec<&str> = un_line.split(' ').collect();
+
+                    let x = line_vec.get(1).unwrap().to_owned().parse::<f32>().unwrap();
+                    let y = line_vec.get(2).unwrap().to_owned().parse::<f32>().unwrap();
+                    let z = line_vec.get(3).unwrap().to_owned().parse::<f32>().unwrap();
+
+                    let v = Vec3D::new(x, y, z);
+                    verts.push(v);
+                },
+                'f' => {
+                    let mut f: [i32; 3] = [0, 0, 0];
+                    let line_vec: Vec<&str> = un_line.split(' ').collect();
+
+                    f[0] = line_vec.get(1).unwrap().to_owned().parse::<i32>().unwrap();
+                    f[1] = line_vec.get(2).unwrap().to_owned().parse::<i32>().unwrap();
+                    f[2] = line_vec.get(3).unwrap().to_owned().parse::<i32>().unwrap();
+
+                    let t = Triangle::new([
+                        verts[(f[0] - 1) as usize],
+                        verts[(f[1] - 1) as usize],
+                        verts[(f[2] - 1) as usize]
+                    ]);
+                    self.tris.push(t);
+                },
+                _ => {}
+            }
+        }
+
+        true
+    }
 }
 
 impl Default for MatProj {
@@ -62,90 +109,100 @@ impl Default for Triangle {
     }
 }
 
+impl Default for Mesh {
+    fn default() -> Self {
+        Self { tris: vec!() }
+    }
+}
+
 fn main() {
-    // SOUTH
-    let south_v1 = Vec3D::new(0.0, 0.0, 0.0);
-    let south_v2 = Vec3D::new(0.0, 1.0, 0.0);
-    let south_v3 = Vec3D::new(1.0, 1.0, 0.0);
-    let south_v4 = Vec3D::new(0.0, 0.0, 0.0);
-    let south_v5 = Vec3D::new(1.0, 1.0, 0.0);
-    let south_v6 = Vec3D::new(1.0, 0.0, 0.0);
+    // // SOUTH
+    // let south_v1 = Vec3D::new(0.0, 0.0, 0.0);
+    // let south_v2 = Vec3D::new(0.0, 1.0, 0.0);
+    // let south_v3 = Vec3D::new(1.0, 1.0, 0.0);
+    // let south_v4 = Vec3D::new(0.0, 0.0, 0.0);
+    // let south_v5 = Vec3D::new(1.0, 1.0, 0.0);
+    // let south_v6 = Vec3D::new(1.0, 0.0, 0.0);
 
-    let south_t1 = Triangle::new([south_v1, south_v2, south_v3]);
-    let south_t2 = Triangle::new([south_v4, south_v5, south_v6]);
+    // let south_t1 = Triangle::new([south_v1, south_v2, south_v3]);
+    // let south_t2 = Triangle::new([south_v4, south_v5, south_v6]);
 
-    // EAST
-    let east_v1 = Vec3D::new(1.0, 0.0, 0.0);
-    let east_v2 = Vec3D::new(1.0, 1.0, 0.0);
-    let east_v3 = Vec3D::new(1.0, 1.0, 1.0);
-    let east_v4 = Vec3D::new(1.0, 0.0, 0.0);
-    let east_v5 = Vec3D::new(1.0, 1.0, 1.0);
-    let east_v6 = Vec3D::new(1.0, 0.0, 1.0);
+    // // EAST
+    // let east_v1 = Vec3D::new(1.0, 0.0, 0.0);
+    // let east_v2 = Vec3D::new(1.0, 1.0, 0.0);
+    // let east_v3 = Vec3D::new(1.0, 1.0, 1.0);
+    // let east_v4 = Vec3D::new(1.0, 0.0, 0.0);
+    // let east_v5 = Vec3D::new(1.0, 1.0, 1.0);
+    // let east_v6 = Vec3D::new(1.0, 0.0, 1.0);
 
-    let east_t1 = Triangle::new([east_v1, east_v2, east_v3]);
-    let east_t2 = Triangle::new([east_v4, east_v5, east_v6]);
+    // let east_t1 = Triangle::new([east_v1, east_v2, east_v3]);
+    // let east_t2 = Triangle::new([east_v4, east_v5, east_v6]);
 
-    // NORTH
-    let north_v1 = Vec3D::new(1.0, 0.0, 1.0);
-    let north_v2 = Vec3D::new(1.0, 1.0, 1.0);
-    let north_v3 = Vec3D::new(0.0, 1.0, 1.0);
-    let north_v4 = Vec3D::new(1.0, 0.0, 1.0);
-    let north_v5 = Vec3D::new(0.0, 1.0, 1.0);
-    let north_v6 = Vec3D::new(0.0, 0.0, 1.0);
+    // // NORTH
+    // let north_v1 = Vec3D::new(1.0, 0.0, 1.0);
+    // let north_v2 = Vec3D::new(1.0, 1.0, 1.0);
+    // let north_v3 = Vec3D::new(0.0, 1.0, 1.0);
+    // let north_v4 = Vec3D::new(1.0, 0.0, 1.0);
+    // let north_v5 = Vec3D::new(0.0, 1.0, 1.0);
+    // let north_v6 = Vec3D::new(0.0, 0.0, 1.0);
 
-    let north_t1 = Triangle::new([north_v1, north_v2, north_v3]);
-    let north_t2 = Triangle::new([north_v4, north_v5, north_v6]);
+    // let north_t1 = Triangle::new([north_v1, north_v2, north_v3]);
+    // let north_t2 = Triangle::new([north_v4, north_v5, north_v6]);
 
-    // WEST
-    let west_v1 = Vec3D::new(0.0, 0.0, 1.0);
-    let west_v2 = Vec3D::new(0.0, 1.0, 1.0);
-    let west_v3 = Vec3D::new(0.0, 1.0, 0.0);
-    let west_v4 = Vec3D::new(0.0, 0.0, 1.0);
-    let west_v5 = Vec3D::new(0.0, 1.0, 0.0);
-    let west_v6 = Vec3D::new(0.0, 0.0, 0.0);
+    // // WEST
+    // let west_v1 = Vec3D::new(0.0, 0.0, 1.0);
+    // let west_v2 = Vec3D::new(0.0, 1.0, 1.0);
+    // let west_v3 = Vec3D::new(0.0, 1.0, 0.0);
+    // let west_v4 = Vec3D::new(0.0, 0.0, 1.0);
+    // let west_v5 = Vec3D::new(0.0, 1.0, 0.0);
+    // let west_v6 = Vec3D::new(0.0, 0.0, 0.0);
 
-    let west_t1 = Triangle::new([west_v1, west_v2, west_v3]);
-    let west_t2 = Triangle::new([west_v4, west_v5, west_v6]);
+    // let west_t1 = Triangle::new([west_v1, west_v2, west_v3]);
+    // let west_t2 = Triangle::new([west_v4, west_v5, west_v6]);
 
-    // TOP
-    let top_v1 = Vec3D::new(0.0, 1.0, 0.0);
-    let top_v2 = Vec3D::new(0.0, 1.0, 1.0);
-    let top_v3 = Vec3D::new(1.0, 1.0, 1.0);
-    let top_v4 = Vec3D::new(0.0, 1.0, 0.0);
-    let top_v5 = Vec3D::new(1.0, 1.0, 1.0);
-    let top_v6 = Vec3D::new(1.0, 1.0, 0.0);
+    // // TOP
+    // let top_v1 = Vec3D::new(0.0, 1.0, 0.0);
+    // let top_v2 = Vec3D::new(0.0, 1.0, 1.0);
+    // let top_v3 = Vec3D::new(1.0, 1.0, 1.0);
+    // let top_v4 = Vec3D::new(0.0, 1.0, 0.0);
+    // let top_v5 = Vec3D::new(1.0, 1.0, 1.0);
+    // let top_v6 = Vec3D::new(1.0, 1.0, 0.0);
 
-    let top_t1 = Triangle::new([top_v1, top_v2, top_v3]);
-    let top_t2 = Triangle::new([top_v4, top_v5, top_v6]);
+    // let top_t1 = Triangle::new([top_v1, top_v2, top_v3]);
+    // let top_t2 = Triangle::new([top_v4, top_v5, top_v6]);
 
-    // BOTTOM
-    let bottom_v1 = Vec3D::new(1.0, 0.0, 1.0);
-    let bottom_v2 = Vec3D::new(0.0, 0.0, 1.0);
-    let bottom_v3 = Vec3D::new(0.0, 0.0, 0.0);
-    let bottom_v4 = Vec3D::new(1.0, 0.0, 1.0);
-    let bottom_v5 = Vec3D::new(0.0, 0.0, 0.0);
-    let bottom_v6 = Vec3D::new(1.0, 0.0, 0.0);
+    // // BOTTOM
+    // let bottom_v1 = Vec3D::new(1.0, 0.0, 1.0);
+    // let bottom_v2 = Vec3D::new(0.0, 0.0, 1.0);
+    // let bottom_v3 = Vec3D::new(0.0, 0.0, 0.0);
+    // let bottom_v4 = Vec3D::new(1.0, 0.0, 1.0);
+    // let bottom_v5 = Vec3D::new(0.0, 0.0, 0.0);
+    // let bottom_v6 = Vec3D::new(1.0, 0.0, 0.0);
 
-    let bottom_t1 = Triangle::new([bottom_v1, bottom_v2, bottom_v3]);
-    let bottom_t2 = Triangle::new([bottom_v4, bottom_v5, bottom_v6]);
+    // let bottom_t1 = Triangle::new([bottom_v1, bottom_v2, bottom_v3]);
+    // let bottom_t2 = Triangle::new([bottom_v4, bottom_v5, bottom_v6]);
 
-    let triangle_vec = vec![
-        south_t1,
-        south_t2,
-        east_t1,
-        east_t2,
-        north_t1,
-        north_t2,
-        west_t1,
-        west_t2,
-        top_t1,
-        top_t2,
-        bottom_t1,
-        bottom_t2
-    ];
+    // let triangle_vec = vec![
+    //     south_t1,
+    //     south_t2,
+    //     east_t1,
+    //     east_t2,
+    //     north_t1,
+    //     north_t2,
+    //     west_t1,
+    //     west_t2,
+    //     top_t1,
+    //     top_t2,
+    //     bottom_t1,
+    //     bottom_t2
+    // ];
 
-    let mesh = Mesh::new(triangle_vec);
+    let mut mesh = Mesh::default();
     let mut mat_proj: MatProj = Default::default();
+
+    mesh.load_from_object_file("VideoShip.obj");
+    // let mesh = Mesh::new(triangle_vec);
+    // mesh.load_from_object_file("VideoShip.obj");
 
     let v_camera = Vec3D::default();
     let f_near: f32 = 0.1;
@@ -214,9 +271,9 @@ fn main() {
             ]);
 
             // Offset into the screen
-            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 3.0;
-            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 3.0;
-            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 3.0;
+            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 8.0;
+            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 8.0;
+            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 8.0;
 
             let mut normal = Vec3D::default();
             let mut line1 = Vec3D::default();
@@ -327,9 +384,9 @@ fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x
 
             d.draw_triangle(t1, t2, t3, c);
 
-            // d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
-            // d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
-            // d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
+            d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
+            d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
+            d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
         },
         None => {
             eprintln!("Triangle doesn't have a color value.");
