@@ -73,7 +73,7 @@ impl Vec3D {
         let y = v1.z * v2.x - v1.x * v2.z;
         let z = v1.x * v2.y - v1.y * v2.x;
 
-        Self::new(x, y, z, 0.0)
+        Self::new(x, y, z, 1.0)
     }
 
     fn vector_length(v: &Self) -> f32 {
@@ -256,7 +256,7 @@ impl Default for Mat4x4 {
 
 impl Default for Vec3D {
     fn default() -> Self {
-        Self { x: 0.0, y: 0.0, z: 0.0, w: 0.0 }
+        Self { x: 0.0, y: 0.0, z: 0.0, w: 1.0 }
     }
 }
 
@@ -277,111 +277,28 @@ impl Default for Mesh {
 }
 
 fn main() {
-    // // SOUTH
-    // let south_v1 = Vec3D::new(0.0, 0.0, 0.0);
-    // let south_v2 = Vec3D::new(0.0, 1.0, 0.0);
-    // let south_v3 = Vec3D::new(1.0, 1.0, 0.0);
-    // let south_v4 = Vec3D::new(0.0, 0.0, 0.0);
-    // let south_v5 = Vec3D::new(1.0, 1.0, 0.0);
-    // let south_v6 = Vec3D::new(1.0, 0.0, 0.0);
-
-    // let south_t1 = Triangle::new([south_v1, south_v2, south_v3]);
-    // let south_t2 = Triangle::new([south_v4, south_v5, south_v6]);
-
-    // // EAST
-    // let east_v1 = Vec3D::new(1.0, 0.0, 0.0);
-    // let east_v2 = Vec3D::new(1.0, 1.0, 0.0);
-    // let east_v3 = Vec3D::new(1.0, 1.0, 1.0);
-    // let east_v4 = Vec3D::new(1.0, 0.0, 0.0);
-    // let east_v5 = Vec3D::new(1.0, 1.0, 1.0);
-    // let east_v6 = Vec3D::new(1.0, 0.0, 1.0);
-
-    // let east_t1 = Triangle::new([east_v1, east_v2, east_v3]);
-    // let east_t2 = Triangle::new([east_v4, east_v5, east_v6]);
-
-    // // NORTH
-    // let north_v1 = Vec3D::new(1.0, 0.0, 1.0);
-    // let north_v2 = Vec3D::new(1.0, 1.0, 1.0);
-    // let north_v3 = Vec3D::new(0.0, 1.0, 1.0);
-    // let north_v4 = Vec3D::new(1.0, 0.0, 1.0);
-    // let north_v5 = Vec3D::new(0.0, 1.0, 1.0);
-    // let north_v6 = Vec3D::new(0.0, 0.0, 1.0);
-
-    // let north_t1 = Triangle::new([north_v1, north_v2, north_v3]);
-    // let north_t2 = Triangle::new([north_v4, north_v5, north_v6]);
-
-    // // WEST
-    // let west_v1 = Vec3D::new(0.0, 0.0, 1.0);
-    // let west_v2 = Vec3D::new(0.0, 1.0, 1.0);
-    // let west_v3 = Vec3D::new(0.0, 1.0, 0.0);
-    // let west_v4 = Vec3D::new(0.0, 0.0, 1.0);
-    // let west_v5 = Vec3D::new(0.0, 1.0, 0.0);
-    // let west_v6 = Vec3D::new(0.0, 0.0, 0.0);
-
-    // let west_t1 = Triangle::new([west_v1, west_v2, west_v3]);
-    // let west_t2 = Triangle::new([west_v4, west_v5, west_v6]);
-
-    // // TOP
-    // let top_v1 = Vec3D::new(0.0, 1.0, 0.0);
-    // let top_v2 = Vec3D::new(0.0, 1.0, 1.0);
-    // let top_v3 = Vec3D::new(1.0, 1.0, 1.0);
-    // let top_v4 = Vec3D::new(0.0, 1.0, 0.0);
-    // let top_v5 = Vec3D::new(1.0, 1.0, 1.0);
-    // let top_v6 = Vec3D::new(1.0, 1.0, 0.0);
-
-    // let top_t1 = Triangle::new([top_v1, top_v2, top_v3]);
-    // let top_t2 = Triangle::new([top_v4, top_v5, top_v6]);
-
-    // // BOTTOM
-    // let bottom_v1 = Vec3D::new(1.0, 0.0, 1.0);
-    // let bottom_v2 = Vec3D::new(0.0, 0.0, 1.0);
-    // let bottom_v3 = Vec3D::new(0.0, 0.0, 0.0);
-    // let bottom_v4 = Vec3D::new(1.0, 0.0, 1.0);
-    // let bottom_v5 = Vec3D::new(0.0, 0.0, 0.0);
-    // let bottom_v6 = Vec3D::new(1.0, 0.0, 0.0);
-
-    // let bottom_t1 = Triangle::new([bottom_v1, bottom_v2, bottom_v3]);
-    // let bottom_t2 = Triangle::new([bottom_v4, bottom_v5, bottom_v6]);
-
-    // let triangle_vec = vec![
-    //     south_t1,
-    //     south_t2,
-    //     east_t1,
-    //     east_t2,
-    //     north_t1,
-    //     north_t2,
-    //     west_t1,
-    //     west_t2,
-    //     top_t1,
-    //     top_t2,
-    //     bottom_t1,
-    //     bottom_t2
-    // ];
-
     let mut mesh = Mesh::default();
-    let mut mat_proj: Mat4x4 = Default::default();
 
     mesh.load_from_object_file("VideoShip.obj");
-    // let mesh = Mesh::new(triangle_vec);
-    // mesh.load_from_object_file("VideoShip.obj");
 
     let v_camera = Vec3D::default();
     let f_near: f32 = 0.1;
     let f_far: f32 = 1000.0;
     let f_fov: f32 = 90.0;
     let f_aspect_ratio: f32 = 640.0 / 480.0;
-    let f_fov_rad: f32 = 1.0 / (f_fov * 0.5 / 180.0 * 3.14159).tan();
     let mut f_theta: f64 = 0.0;
 
-    mat_proj.m[0][0] = f_aspect_ratio * f_fov_rad;
-    mat_proj.m[1][1] = f_fov_rad;
-    mat_proj.m[2][2] = f_far / (f_far - f_near);
-    mat_proj.m[3][2] = (-f_far * f_near) / (f_far - f_near);
-    mat_proj.m[2][3] = 1.0;
-    mat_proj.m[3][3] = 0.0;
+    let mat_proj = Mat4x4::matrix_make_projection(
+        f_fov,
+        f_aspect_ratio,
+        f_near,
+        f_far
+    );
 
-    let mut mat_rot_z: Mat4x4 = Default::default();
-    let mut mat_rot_x: Mat4x4 = Default::default();
+    let mut mat_rot_z: Mat4x4;
+    let mut mat_rot_x: Mat4x4;
+    let mut mat_translation: Mat4x4;
+    let mut mat_world: Mat4x4;
 
     let (mut rl, thread) = raylib::init()
         .size(800, 800)
@@ -394,87 +311,49 @@ fn main() {
 
         f_theta = d.get_time() + 100.0;
 
-        // Rotation Z
-        mat_rot_z.m[0][0] = f_theta.cos() as f32;
-        mat_rot_z.m[0][1] = f_theta.sin() as f32;
-        mat_rot_z.m[1][0] = -f_theta.sin() as f32;
-        mat_rot_z.m[1][1] = f_theta.cos() as f32;
-        mat_rot_z.m[2][2] = 1.0;
-        mat_rot_z.m[3][3] = 1.0;
+        mat_rot_z = Mat4x4::matrix_make_rotation_z((f_theta * 0.5) as f32);
+        mat_rot_x = Mat4x4::matrix_make_rotation_x(f_theta as f32);
+        mat_translation = Mat4x4::matrix_make_translation(0.0, 0.0, 16.0);
 
-        // Rotation X
-        mat_rot_x.m[0][0] = 1.0;
-        mat_rot_x.m[1][1] = (f_theta * 0.5).cos() as f32;
-        mat_rot_x.m[1][2] = (f_theta * 0.5).sin() as f32;
-        mat_rot_x.m[2][1] = -(f_theta * 0.5).sin() as f32;
-        mat_rot_x.m[2][2] = (f_theta * 0.5).cos() as f32;
-        mat_rot_x.m[3][3] = 1.0;
+        mat_world = Mat4x4::matrix_multiply_matrix(&mat_rot_z, &mat_rot_x);
+        // mat_world = Mat4x4::matrix_multiply_matrix(&mat_world, &mat_translation);
 
         let mut vec_triangles_to_raster: Vec<Triangle> = vec![];
 
         for tri in &mesh.tris {
-            // Draw triangles
             let mut tri_projected = Triangle::default();
-            let mut tri_rotated_z = Triangle::default();
-            let mut tri_rotated_zx = Triangle::default();
+            let mut tri_transformed = Triangle::default();
 
-            multiply_matrix_vector(&tri.p[0], &mut tri_rotated_z.p[0], &mat_rot_z);
-            multiply_matrix_vector(&tri.p[1], &mut tri_rotated_z.p[1], &mat_rot_z);
-            multiply_matrix_vector(&tri.p[2], &mut tri_rotated_z.p[2], &mat_rot_z);
+            // Draw triangles
+            tri_transformed.p[0] = Vec3D::matrix_multiply_vector(&mat_world, &tri.p[0]);
+            tri_transformed.p[1] = Vec3D::matrix_multiply_vector(&mat_world, &tri.p[1]);
+            tri_transformed.p[2] = Vec3D::matrix_multiply_vector(&mat_world, &tri.p[2]);
 
-            // Rotate in X-Axis
-            multiply_matrix_vector(&tri_rotated_z.p[0], &mut tri_rotated_zx.p[0], &mat_rot_x);
-            multiply_matrix_vector(&tri_rotated_z.p[1], &mut tri_rotated_zx.p[1], &mat_rot_x);
-            multiply_matrix_vector(&tri_rotated_z.p[2], &mut tri_rotated_zx.p[2], &mat_rot_x);
+            // tri_transformed.p[0].z += 16.0;
+            // tri_transformed.p[1].z += 16.0;
+            // tri_transformed.p[2].z += 16.0;
 
-            let mut tri_translated = Triangle::new([
-                tri_rotated_zx.p[0],
-                tri_rotated_zx.p[1],
-                tri_rotated_zx.p[2]
-            ]);
+            let line1 = Vec3D::vector_sub(&tri_transformed.p[1], &tri_transformed.p[0]);
+            let line2 = Vec3D::vector_sub(&tri_transformed.p[2], &tri_transformed.p[0]);
 
-            // Offset into the screen
-            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 8.0;
-            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 8.0;
-            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 8.0;
+            let mut normal = Vec3D::vector_crossproduct(&line1, &line2);
+            normal = Vec3D::vector_normalize(&normal);
 
-            let mut normal = Vec3D::default();
-            let mut line1 = Vec3D::default();
-            let mut line2 = Vec3D::default();
+            let v_camera_ray = Vec3D::vector_sub(&tri_transformed.p[0], &v_camera);
 
-            line1.x = tri_translated.p[1].x - tri_translated.p[0].x;
-            line1.y = tri_translated.p[1].y - tri_translated.p[0].y;
-            line1.z = tri_translated.p[1].z - tri_translated.p[0].z;
-
-            line2.x = tri_translated.p[2].x - tri_translated.p[0].x;
-            line2.y = tri_translated.p[2].y - tri_translated.p[0].y;
-            line2.z = tri_translated.p[2].z - tri_translated.p[0].z;
-
-            normal.x = line1.y * line2.z - line1.z * line2.y;
-            normal.y = line1.z * line2.x - line1.x * line2.z;
-            normal.z = line1.x * line2.y - line1.y * line2.x;
-
-            let l = (normal.x*normal.x + normal.y*normal.y + normal.z*normal.z).sqrt();
-            normal.x /= l; normal.y /= l; normal.z /= l;
-
-            if (
-                normal.x * (tri_translated.p[0].x - v_camera.x) +
-                normal.y * (tri_translated.p[0].y - v_camera.y) +
-                normal.z * (tri_translated.p[0].z - v_camera.z)
-            ) < 0.0 {
+            if Vec3D::vector_dotproduct(&normal, &v_camera_ray) < 0.0 {
                 // Illumination
                 let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0, w: 0.0 };
-                let l = (light_direction.x*light_direction.x + light_direction.y*light_direction.y + light_direction.z*light_direction.z).sqrt();
-                light_direction.x /= l; light_direction.y /= l; light_direction.z /= l;
+                light_direction = Vec3D::vector_normalize(&light_direction);
 
-                let dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
+                let dp = (0.1_f32).max(Vec3D::vector_dotproduct(&light_direction, &normal));
                 let c = get_color(dp);
                 tri_projected.color = Some(c);
 
                 // Project triangles from 3D --> 2D
-                multiply_matrix_vector(&tri_translated.p[0], &mut tri_projected.p[0], &mat_proj);
-                multiply_matrix_vector(&tri_translated.p[1], &mut tri_projected.p[1], &mat_proj);
-                multiply_matrix_vector(&tri_translated.p[2], &mut tri_projected.p[2], &mat_proj);
+                multiply_matrix_vector(&tri_transformed.p[0], &mut tri_projected.p[0], &mat_proj);
+                multiply_matrix_vector(&tri_transformed.p[1], &mut tri_projected.p[1], &mat_proj);
+                multiply_matrix_vector(&tri_transformed.p[2], &mut tri_projected.p[2], &mat_proj);
 
                 // Scale into view (?)
                 tri_projected.p[0].x += 1.0; tri_projected.p[0].y += 1.0;
@@ -561,9 +440,9 @@ fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x
 
             d.draw_triangle(t1, t2, t3, c);
 
-            // d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
-            // d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
-            // d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
+            d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
+            d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
+            d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
         },
         None => {
             eprintln!("Triangle doesn't have a color value.");
