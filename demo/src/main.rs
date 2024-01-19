@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use raylib::prelude::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct Vec3D {
     x: f32,
     y: f32,
@@ -19,6 +19,7 @@ struct Mesh {
     tris: Vec<Triangle>
 }
 
+#[derive(Debug)]
 struct Mat4x4 {
     m: [[f32; 4]; 4]
 }
@@ -86,7 +87,7 @@ impl Vec3D {
             v.x / l,
             v.y / l,
             v.z / l,
-            0.0
+            1.0
         )
     }
 
@@ -220,7 +221,7 @@ impl Mesh {
                     let y = line_vec.get(2).unwrap().to_owned().parse::<f32>().unwrap();
                     let z = line_vec.get(3).unwrap().to_owned().parse::<f32>().unwrap();
 
-                    let v = Vec3D::new(x, y, z, 0.0);
+                    let v = Vec3D::new(x, y, z, 1.0);
                     verts.push(v);
                 },
                 'f' => {
@@ -315,8 +316,8 @@ fn main() {
         mat_rot_x = Mat4x4::matrix_make_rotation_x(f_theta as f32);
         mat_translation = Mat4x4::matrix_make_translation(0.0, 0.0, 16.0);
 
-        mat_world = Mat4x4::matrix_multiply_matrix(&mat_rot_z, &mat_rot_x);
-        // mat_world = Mat4x4::matrix_multiply_matrix(&mat_world, &mat_translation);
+        mat_world = Mat4x4::matrix_multiply_matrix(&mat_rot_x, &mat_rot_z);
+        mat_world = Mat4x4::matrix_multiply_matrix(&mat_world, &mat_translation);
 
         let mut vec_triangles_to_raster: Vec<Triangle> = vec![];
 
@@ -329,10 +330,6 @@ fn main() {
             tri_transformed.p[1] = Vec3D::matrix_multiply_vector(&mat_world, &tri.p[1]);
             tri_transformed.p[2] = Vec3D::matrix_multiply_vector(&mat_world, &tri.p[2]);
 
-            // tri_transformed.p[0].z += 16.0;
-            // tri_transformed.p[1].z += 16.0;
-            // tri_transformed.p[2].z += 16.0;
-
             let line1 = Vec3D::vector_sub(&tri_transformed.p[1], &tri_transformed.p[0]);
             let line2 = Vec3D::vector_sub(&tri_transformed.p[2], &tri_transformed.p[0]);
 
@@ -343,7 +340,7 @@ fn main() {
 
             if Vec3D::vector_dotproduct(&normal, &v_camera_ray) < 0.0 {
                 // Illumination
-                let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0, w: 0.0 };
+                let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0, w: 1.0 };
                 light_direction = Vec3D::vector_normalize(&light_direction);
 
                 let dp = (0.1_f32).max(Vec3D::vector_dotproduct(&light_direction, &normal));
@@ -351,14 +348,19 @@ fn main() {
                 tri_projected.color = Some(c);
 
                 // Project triangles from 3D --> 2D
-                multiply_matrix_vector(&tri_transformed.p[0], &mut tri_projected.p[0], &mat_proj);
-                multiply_matrix_vector(&tri_transformed.p[1], &mut tri_projected.p[1], &mat_proj);
-                multiply_matrix_vector(&tri_transformed.p[2], &mut tri_projected.p[2], &mat_proj);
+                tri_projected.p[0] = Vec3D::matrix_multiply_vector(&mat_proj, &tri_transformed.p[0]);
+                tri_projected.p[1] = Vec3D::matrix_multiply_vector(&mat_proj, &tri_transformed.p[1]);
+                tri_projected.p[2] = Vec3D::matrix_multiply_vector(&mat_proj, &tri_transformed.p[2]);
+
+                tri_projected.p[0] = Vec3D::vector_div(&tri_projected.p[0], tri_projected.p[0].w);
+                tri_projected.p[1] = Vec3D::vector_div(&tri_projected.p[1], tri_projected.p[1].w);
+                tri_projected.p[2] = Vec3D::vector_div(&tri_projected.p[2], tri_projected.p[2].w);
 
                 // Scale into view (?)
-                tri_projected.p[0].x += 1.0; tri_projected.p[0].y += 1.0;
-                tri_projected.p[1].x += 1.0; tri_projected.p[1].y += 1.0;
-                tri_projected.p[2].x += 1.0; tri_projected.p[2].y += 1.0;
+                let v_offset_view = Vec3D::new(1.0, 1.0, 0.0, 1.0);
+                tri_projected.p[0] = Vec3D::vector_add(&tri_projected.p[0], &v_offset_view);
+                tri_projected.p[1] = Vec3D::vector_add(&tri_projected.p[1], &v_offset_view);
+                tri_projected.p[2] = Vec3D::vector_add(&tri_projected.p[2], &v_offset_view);
 
                 tri_projected.p[0].x *= 0.5 * 800.0;
                 tri_projected.p[0].y *= 0.5 * 800.0;
@@ -440,9 +442,9 @@ fn draw_triangle(d: &mut RaylibDrawHandle, x1: f32, y1: f32, x2: f32, y2: f32, x
 
             d.draw_triangle(t1, t2, t3, c);
 
-            d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
-            d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
-            d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
+            // d.draw_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, Color::BLACK);
+            // d.draw_line(x2 as i32, y2 as i32, x3 as i32, y3 as i32, Color::BLACK);
+            // d.draw_line(x3 as i32, y3 as i32, x1 as i32, y1 as i32, Color::BLACK);
         },
         None => {
             eprintln!("Triangle doesn't have a color value.");
